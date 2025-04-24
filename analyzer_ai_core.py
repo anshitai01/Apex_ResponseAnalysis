@@ -147,13 +147,6 @@ def evaluate_responses(survey_question, responses, is_batch, batch_size, generat
     **Output Format:**
     Provide the analysis as a **single JSON list** containing multiple JSON objects, one for each response analyzed in this batch. Each object must contain exactly the keys specified above. Do not use markdown formatting (like ```json). Ensure all numeric scores are integers/floats within their specified ranges. Respond ONLY with the JSON list, no introductory text.
     """
-    # Safety Settings (Keep relaxed or adjust as needed)
-    safety_settings = {
-        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-    }
 
     # Note: Safety settings are defined in config and passed during API call
 
