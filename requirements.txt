@@ -1,0 +1,9 @@
+streamlit
+pandas 
+google-generativeai 
+matplotlib 
+seaborn 
+wordcloud 
+openpyxl 
+scikit-learn 
+scipy
