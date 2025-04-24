@@ -90,8 +90,8 @@ def evaluate_responses(survey_question, responses, is_batch, batch_size, generat
 
     **Survey Question:**
     "{survey_question}"
+**Evaluation Criteria & Keys for EACH response object in the JSON list:**
 
-    **Evaluation Criteria & Keys for EACH response object in the JSON list:**
     1.  **relevance:** (0-10) How directly does the response address the specific question?
     2.  **completeness:** (0-10) How thoroughly does the response answer all aspects implied?
     3.  **specificity:** (0-10) Level of detail and concrete information.
@@ -104,15 +104,57 @@ def evaluate_responses(survey_question, responses, is_batch, batch_size, generat
         *   "score": Provide a confidence score (0.0 to 1.0) for the assigned label.
     8.  **overall_score:** (0-100) Calculate this as EXACTLY (Sum of relevance, completeness, specificity, language_quality, sentiment_alignment) * 2. Integer output required.
     9.  **explanation:** (1 concise sentence, max 15 words) Justify the overall evaluation, highlighting key strengths/weaknesses.
-    10. **bot_likelihood:** (0-10) Analyze the response for signs of AI authorship (formality, lack of personal experience/specifics, generic tone). Assign a score from 1 (human) to 10 (bot).
+    10. **bot_likelihood:** (0-10) Analyze the following response for signs of AI authorship, focusing on formality, lack of personal experience, absence of specific examples, and a neutral or generic tone. Assign a bot likelihood score from 1 (definitely human) to 10 (definitely bot), and explain your reasoning in one sentence.
 
     ---
+    **Example:**
+
+    **Input Responses for this Batch:**
+    ["It was okay, but lacked detail.", "Amazing! Super helpful."]
+
+    **Output Format Example:**
+    [
+      {{
+        "relevance": 7,
+        "completeness": 5,
+        "specificity": 3,
+        "language_quality": 8,
+        "sentiment_alignment": 7,
+        "topic_status": "On-topic",
+        "sentiment": {{"label": "Neutral", "score": 0.7}},
+        "overall_score": 60,
+        "explanation": "Addresses question somewhat but lacks specifics.",
+        "bot_likelihood": 1
+      }},
+      {{
+        "relevance": 9,
+        "completeness": 8,
+        "specificity": 7,
+        "language_quality": 9,
+        "sentiment_alignment": 9,
+        "topic_status": "On-topic",
+        "sentiment": {{"label": "Positive", "score": 0.95}},
+        "overall_score": 84,
+        "explanation": "Clearly answers with positive sentiment and detail.",
+        "bot_likelihood": 0
+      }}
+    ]
+    ---
+
     **Input Responses for this Batch:**
     {json_batch}
 
     **Output Format:**
     Provide the analysis as a **single JSON list** containing multiple JSON objects, one for each response analyzed in this batch. Each object must contain exactly the keys specified above. Do not use markdown formatting (like ```json). Ensure all numeric scores are integers/floats within their specified ranges. Respond ONLY with the JSON list, no introductory text.
     """
+    # Safety Settings (Keep relaxed or adjust as needed)
+    safety_settings = {
+        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+    }
+
     # Note: Safety settings are defined in config and passed during API call
 
     # --- Progress Bar Setup ---
