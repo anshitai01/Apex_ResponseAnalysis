@@ -132,7 +132,7 @@ with st.sidebar:
     </style>""", unsafe_allow_html=True)
     st.markdown(logo_html, unsafe_allow_html=True)
 
-    #st.header("⚙️ Settings")
+    st.header("⚙️ Settings")
 
     # --- API Key Handling Logic ---
     # Uses analyzer_config state keys and analyzer_utils.validate_api_key
