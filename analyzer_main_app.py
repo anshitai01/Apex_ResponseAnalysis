@@ -132,7 +132,7 @@ with st.sidebar:
     </style>""", unsafe_allow_html=True)
     st.markdown(logo_html, unsafe_allow_html=True)
 
-    st.header("⚙️ Settings")
+    #st.header("⚙️ Settings")
 
     # --- API Key Handling Logic ---
     # Uses analyzer_config state keys and analyzer_utils.validate_api_key
@@ -241,8 +241,9 @@ analyzer_gen_config = GenerationConfig(
 )
 
 # ======================= Tab 1: Input & Run ==========================
+# ======================= Tab 1: Input & Run ==========================
 with input_tab:
-    st.header("Input Data & Run Analysis") # Changed header slightly
+    st.header("1. Input Data & Run Analysis") # Changed header slightly
 
     # --- Survey Question Input ---
     st.session_state[cfg.SURVEY_QUESTION_INPUT_KEY] = st.text_area(
@@ -268,9 +269,9 @@ with input_tab:
     if input_method == "Paste Text":
         # Clear file state if switching
         if st.session_state.get(cfg.CURRENT_FILE_NAME_KEY):
-             keys_to_clear = [cfg.UPLOADED_DF_KEY, cfg.SELECTED_COLUMN_KEY, cfg.SELECTED_COLUMN_INDEX_KEY, cfg.CURRENT_FILE_NAME_KEY, cfg.RESPONSES_KEY]
-             for key in keys_to_clear: st.session_state.pop(key, None)
-             logging.info("Analyzer: Switched to text input, cleared file state.")
+            keys_to_clear = [cfg.UPLOADED_DF_KEY, cfg.SELECTED_COLUMN_KEY, cfg.CURRENT_FILE_NAME_KEY, cfg.RESPONSES_KEY, cfg.SELECTED_COLUMN_INDEX_KEY]
+            for key in keys_to_clear: st.session_state.pop(key, None)
+            logging.info("Analyzer: Switched to text input, cleared file state.")
 
         st.session_state[cfg.RESPONSES_INPUT_AREA_KEY] = st.text_area(
             "📋 Paste Responses (One per line):",
@@ -292,10 +293,16 @@ with input_tab:
              st.session_state.pop(cfg.RESPONSES_KEY, None)
              logging.info("Analyzer: Switched to file upload, cleared text input state.")
 
+        # --- ADD/ENSURE THIS LINE IS PRESENT ---
         uploaded_file = st.file_uploader(
-            "📁 Upload Data File:", type=['csv', 'xlsx', 'xls'],
-            key="analyzer_file_uploader_main", accept_multiple_files=False
+            "📁 Upload Data File (.csv, .xlsx, .xls):", # Label includes types
+            type=['csv', 'xlsx', 'xls'],
+            key="analyzer_file_uploader_main", # Use the correct key
+            accept_multiple_files=False,
+            help="Upload your survey data. Ensure one column contains the open-ended text."
         )
+        # --- END OF FILE UPLOADER CALL ---
+
         if uploaded_file is not None:
             current_df = st.session_state.get(cfg.UPLOADED_DF_KEY)
             reload_file = (st.session_state.get(cfg.CURRENT_FILE_NAME_KEY) != uploaded_file.name) or \
@@ -304,19 +311,24 @@ with input_tab:
             if reload_file: # Load or reload file
                 logging.info(f"Analyzer: New file ('{uploaded_file.name}') or DF missing. Loading.")
                 with st.spinner(f"Reading and processing {uploaded_file.name}..."):
+                    # Clear dependent states before loading new file
                     st.session_state.pop(cfg.SELECTED_COLUMN_KEY, None)
                     st.session_state.pop(cfg.SELECTED_COLUMN_INDEX_KEY, None)
                     st.session_state.pop(cfg.RESPONSES_KEY, None)
-                    st.session_state[cfg.UPLOADED_DF_KEY] = None
+                    st.session_state[cfg.UPLOADED_DF_KEY] = None # Clear previous DF explicitly
+
                     loaded_data = utils.load_data_from_file(uploaded_file) # Use util function
-                    if loaded_data is not None and not loaded_data.empty:
+
+                    if loaded_data is not None and isinstance(loaded_data, pd.DataFrame) and not loaded_data.empty:
                         st.session_state[cfg.UPLOADED_DF_KEY] = loaded_data
                         st.session_state[cfg.CURRENT_FILE_NAME_KEY] = uploaded_file.name
+                        logging.info(f"Analyzer: Loaded DF from {uploaded_file.name}. Shape: {loaded_data.shape}")
                         st.success(f"Loaded `{uploaded_file.name}` ({len(loaded_data)} rows). Select column below.")
                         st.rerun() # Rerun needed after successful load
                     else: # load_data handles error messages
-                        st.session_state.pop(cfg.UPLOADED_DF_KEY, None)
+                        st.session_state.pop(cfg.UPLOADED_DF_KEY, None) # Ensure no corrupt/empty df is stored
                         st.session_state.pop(cfg.CURRENT_FILE_NAME_KEY, None)
+                        # No rerun here, let user upload a different file
 
             # --- Column Selection (Only if DF is loaded) ---
             df_for_selection = st.session_state.get(cfg.UPLOADED_DF_KEY)
@@ -345,10 +357,10 @@ with input_tab:
                     )
                     # Update state if selection changed
                     if selected_col_name != st.session_state.get(cfg.SELECTED_COLUMN_KEY):
-                        st.session_state[cfg.SELECTED_COLUMN_KEY] = selected_col_name
-                        try: st.session_state[cfg.SELECTED_COLUMN_INDEX_KEY] = available_columns.index(selected_col_name)
-                        except ValueError: st.session_state[cfg.SELECTED_COLUMN_INDEX_KEY] = 0
-                        st.session_state[cfg.RESPONSES_KEY] = [] # Clear old responses
+                         st.session_state[cfg.SELECTED_COLUMN_KEY] = selected_col_name
+                         try: st.session_state[cfg.SELECTED_COLUMN_INDEX_KEY] = available_columns.index(selected_col_name)
+                         except ValueError: st.session_state[cfg.SELECTED_COLUMN_INDEX_KEY] = 0
+                         st.session_state[cfg.RESPONSES_KEY] = [] # Clear old responses
 
                     # Extract responses if column selected and responses not yet extracted
                     if selected_col_name and not st.session_state.get(cfg.RESPONSES_KEY):
@@ -364,7 +376,7 @@ with input_tab:
 
         else: # No file uploaded or removed
             if st.session_state.get(cfg.CURRENT_FILE_NAME_KEY):
-                keys_to_clear = [cfg.UPLOADED_DF_KEY, cfg.SELECTED_COLUMN_KEY, cfg.SELECTED_COLUMN_INDEX_KEY, cfg.CURRENT_FILE_NAME_KEY, cfg.RESPONSES_KEY]
+                keys_to_clear = [cfg.UPLOADED_DF_KEY, cfg.SELECTED_COLUMN_KEY, cfg.CURRENT_FILE_NAME_KEY, cfg.RESPONSES_KEY, cfg.SELECTED_COLUMN_INDEX_KEY]
                 for key in keys_to_clear: st.session_state.pop(key, None)
                 logging.info("Analyzer: File removed, clearing related state.")
 
@@ -373,7 +385,6 @@ with input_tab:
     st.markdown("---")
     st.subheader("Run Analysis")
 
-    # Read final values from state for button logic
     question = st.session_state.get(cfg.SURVEY_QUESTION_INPUT_KEY, '').strip()
     final_responses_list = st.session_state.get(cfg.RESPONSES_KEY, [])
     final_analysis_mode = "Batch" if len(final_responses_list) > 1 else "Single"
@@ -386,27 +397,21 @@ with input_tab:
     if st.button("🚀 Start Analysis", type="primary", use_container_width=True, key="analyzer_start_button", disabled=disable_analyze):
         st.info(f"Starting {final_analysis_mode} analysis for {len(final_responses_list)} response(s)...")
         with st.spinner(f"🧠 AI is analyzing ({final_analysis_mode} Mode)... Please wait."):
-            # Clear previous results
             keys_to_clear = [cfg.ANALYSIS_DF_KEY, cfg.CLUSTERING_DF_KEY, cfg.AI_QA_HISTORY_KEY, cfg.SELECTED_ROW_INDEX_KEY, cfg.EXECUTION_TIME_KEY]
             for key in keys_to_clear: st.session_state.pop(key, None)
 
-            # Call the core AI evaluation function
-            analysis_df_result = ai_core.evaluate_responses(
-                survey_question=question,
-                responses=final_responses_list,
-                is_batch=(final_analysis_mode == "Batch"),
-                batch_size=st.session_state[cfg.BATCH_SIZE_KEY],
-                generation_config=analyzer_gen_config, # Pass the config object
-                api_key=st.session_state[cfg.API_KEY]
+            analysis_df_result = ai_core.evaluate_responses( # Use ai_core function
+                survey_question=question, responses=final_responses_list,
+                is_batch=(final_analysis_mode == "Batch"), batch_size=st.session_state[cfg.BATCH_SIZE_KEY],
+                generation_config=analyzer_gen_config, api_key=st.session_state[cfg.API_KEY]
             )
 
-        # Store results in session state
         if analysis_df_result is not None and not analysis_df_result.empty:
             st.session_state[cfg.ANALYSIS_DF_KEY] = analysis_df_result
-            st.session_state[cfg.RESPONSES_USED_KEY] = final_responses_list # Store actual list used
-            st.session_state[cfg.SURVEY_QUESTION_USED_KEY] = question # Store question used
+            st.session_state[cfg.RESPONSES_USED_KEY] = final_responses_list
+            st.session_state[cfg.SURVEY_QUESTION_USED_KEY] = question
             st.session_state[cfg.ANALYSIS_MODE_KEY] = final_analysis_mode
-            st.session_state[cfg.SELECTED_ROW_INDEX_KEY] = 0 # Reset selected row
+            st.session_state[cfg.SELECTED_ROW_INDEX_KEY] = 0
             st.session_state[cfg.EXECUTION_TIME_KEY] = st.session_state.get('execution_time', 0) # Get time if set by func
             st.success(f"✅ Analysis Complete! View results in other tabs.")
             logging.info(f"Analyzer: Analysis successful ({len(final_responses_list)} responses).")
@@ -415,8 +420,6 @@ with input_tab:
             st.error("❌ Analysis failed or returned no results. Check inputs/API key/logs.")
             logging.error("Analyzer: Analysis failed or returned empty/None dataframe.")
             st.session_state.pop(cfg.ANALYSIS_DF_KEY, None)
-
-
 # ======================= Tab 2: Results & Details =====================
 with results_tab:
     st.header("📈 Analysis Results & Details")
