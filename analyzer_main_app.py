@@ -243,7 +243,7 @@ analyzer_gen_config = GenerationConfig(
 # ======================= Tab 1: Input & Run ==========================
 # ======================= Tab 1: Input & Run ==========================
 with input_tab:
-    st.header("1. Input Data & Run Analysis") # Changed header slightly
+    st.header("Input Data & Run Analysis") # Changed header slightly
 
     # --- Survey Question Input ---
     st.session_state[cfg.SURVEY_QUESTION_INPUT_KEY] = st.text_area(
