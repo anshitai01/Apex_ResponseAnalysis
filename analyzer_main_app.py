@@ -677,7 +677,7 @@ with clustering_tab:
                 except Exception as e: st.error(f"Failed cluster download: {e}")
 
 # ======================= Tab 6: Ask AI =================================
-# ======================= Tab 6: Ask AI =================================
+
 with ai_qa_tab:
     st.header("❓ Ask AI About the Data")
 
@@ -748,7 +748,7 @@ with ai_qa_tab:
                          st.session_state[cfg.AI_QA_HISTORY_KEY].insert(0, {"question": user_question_stripped, "answer": ai_answer})
                          logging.info(f"Analyzer Q&A: Q='{user_question_stripped[:50]}...', A_len={len(str(ai_answer))}")
                          # Clear the input box after successful submission by resetting its state variable
-                         st.session_state.analyzer_qa_input = ""
+                         #st.session_state.analyzer_qa_input = ""
                          st.rerun() # Rerun to display the new answer immediately and clear input box
                     else:
                          # Handle case where ask_ai_about_data might theoretically return None (though it aims to return error strings)
